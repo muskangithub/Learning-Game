@@ -5,6 +5,7 @@ import ResetButton from '../components/ResetButton';
 import GameBoard from '../components/GameBoard';
 import ScoreIndicator from '../components/ScoreIndicator';
 import { fetchGameData } from '../utils/fetchData';
+import GameNew from '../components/GameNew';
 
 const Game = () => {
   const [gameStarted, setGameStarted] = useState(false);
@@ -30,7 +31,8 @@ const Game = () => {
       ) : (
         <>
           <ScoreIndicator score={score} />
-          <GameBoard data={gameData} />
+          {/* <GameBoard data={gameData} /> */}
+          <GameNew data={gameData}/>
           <ResetButton onReset={resetGame} />
         </>
       )}

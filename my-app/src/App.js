@@ -5,6 +5,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import CompletionScreen from "./components/CompletionScreen";
 import StartButton from "./components/StartButton";
 import GameInterface from "./components/GameBoard";
+import GameNew from "./components/GameNew";
 
 function App() {
   const [screen, setScreen] = useState("landing");
@@ -16,7 +17,8 @@ function App() {
   return (
     <DndProvider backend={HTML5Backend}>
       {screen === "landing" && <StartButton onStart={startGame} />}
-      {screen === "game" && <GameInterface onComplete={completeGame} />}
+      {/* {screen === "game" && <GameInterface onComplete={completeGame} />} */}
+      {screen === "game" && <GameNew onComplete={completeGame} />}
       {screen === "completion" && <CompletionScreen onRestart={restartGame} />}
     </DndProvider>
   );
