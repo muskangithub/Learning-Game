@@ -1,14 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import DraggableAnimal from './DraggableAnimal';
-import HabitatDropZone from './HabitatDropZone';
+import Lion from '../assets/images/Lion.jpg';
+import Panda from '../assets/images/panda.jpg';
+import Parrot from '../assets/images/parrot.jpeg';
+import Fish from '../assets/images/fish.jpg';
+import Camel from '../assets/images/camel.jpeg';
+import Sparrow from '../assets/images/sparrow.jpeg';
+import Octopus from '../assets/images/octopus.jpeg';
+import Giraffe from '../assets/images/giraff.jpeg';
+import Crocodile from '../assets/images/crocodile.jpeg';
+import Elephant from '../assets/images/elephant.jpeg';
 import clappingSound from "../assets/sound/clap.mp3"; 
 import sadSound from "../assets/sound/wrong.mp3";
+import DraggableAnimal from './DraggableAnimal'
+import HabitatDropZone from './HabitatDropZone'
+import {fetchGameData} from '../utils/fetchData'
 
-// Game Component
-const GameNew = ({ onComplete, setScore, score }) => {
-  const [availableAnimals, setAvailableAnimals] = useState([]);
+// Initial Animal data
+const initialAnimals = [
+  { id: '3', name: 'panda', habitat: 'bamboo', image: Panda },
+  { id: '5', name: 'lion', habitat: 'jungle', image: Lion },
+  { id: '4', name: 'parrot', habitat: 'nest', image: Parrot },
+  { id: '2', name: 'fish', habitat: 'ocean', image: Fish },
+  { id: '1', name: 'camel', habitat: 'desert', image: Camel },
+  { id: '6', name: 'sparrow', habitat: 'nest', image: Sparrow },
+  { id: '7', name: 'octopus', habitat: 'ocean', image: Octopus },
+  { id: '8', name: 'giraffe', habitat: 'jungle', image: Giraffe },
+  { id: '9', name: 'crocodile', habitat: 'ocean', image: Crocodile },
+  { id: '10', name: 'elephant', habitat: 'jungle', image: Elephant },
+];
+
+const GameNew = ({ onComplete,setScore,score }) => {
+  const [availableAnimals, setAvailableAnimals] = useState(initialAnimals);
   const [habitatZones, setHabitatZones] = useState({
     bamboo: [],
     ocean: [],
@@ -16,45 +40,15 @@ const GameNew = ({ onComplete, setScore, score }) => {
     nest: [],
     desert: [],
   });
+  const data=fetchGameData()
+  console.log(data,"dattatat")
+  
   const [feedback, setFeedback] = useState('');
   const [isGameComplete, setIsGameComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const clappingAudio = new Audio(clappingSound);
+   const clappingAudio = new Audio(clappingSound);
   const sadAudio = new Audio(sadSound);
 
-  // Fetch animal data from API
-  useEffect(() => {
-    const fetchAnimals = async () => {
-      try {
-        const response = await fetch('https://www.freetestapi.com/api/v1/animals');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-
-        // Map fetched data to fit the structure used in your app
-        const mappedAnimals = data.map((animal) => ({
-          id: animal.id.toString(),
-          name: animal.name.toLowerCase(),
-          habitat: animal.habitat.toLowerCase(),
-          image: animal.image, // Ensure the API provides a valid image URL
-        }));
-
-        setAvailableAnimals(mappedAnimals);
-         setIsLoading(false);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnimals();
-  }, []);
-
-  // Handle drop logic
   const handleDrop = (item, habitat) => {
     const animal = availableAnimals.find((a) => a.id === item.id);
     if (!animal) return;
@@ -70,26 +64,27 @@ const GameNew = ({ onComplete, setScore, score }) => {
     if (isCorrect) {
       setScore((prev) => prev + 1);
       setFeedback(`🎉 Cheers! ${animal.name} lives in the ${habitat}!`);
-      clappingAudio.play();
+       clappingAudio.play();
     } else {
       setFeedback(`😞 Don't give up! ${animal.name} doesn't live in the ${habitat}. Try again!`);
-      sadAudio.play();
+       sadAudio.play();
     }
 
     // Automatically clear feedback after 3 seconds
     setTimeout(() => setFeedback(''), 2000);
   };
 
-  // Check game completion
+  // Check if game is complete using useEffect
   useEffect(() => {
-    if (availableAnimals.length === 0 && !isLoading) {
-      setTimeout(() => setIsGameComplete(true), 500);
+    if (availableAnimals.length === 0) {
+      console.log('Last animal dropped, setting game complete...');
+      setTimeout(() => { setIsGameComplete(true)}, 500);
     }
-  }, [availableAnimals, isLoading]);
+  }, [availableAnimals]); 
 
   // Restart the game
   const handleRestart = () => {
-    setAvailableAnimals([]);
+    setAvailableAnimals(initialAnimals);
     setHabitatZones({
       bamboo: [],
       ocean: [],
@@ -99,16 +94,8 @@ const GameNew = ({ onComplete, setScore, score }) => {
     });
     setFeedback('');
     setIsGameComplete(false);
-    onComplete(); // Reset game completion state
+     onComplete(); // Reset game completion state
   };
-
-  if (isLoading) {
-    return <p>Loading animals...</p>;
-  }
-
-  if (error) {
-    return <p>Error: {error}</p>;
-  }
 
   return (
     <DndProvider backend={HTML5Backend}>

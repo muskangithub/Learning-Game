@@ -1,4 +1,3 @@
-// components/StartButton.jsx
 import React, { useState } from "react";
 
 const StartButton = ({ onStart }) => {

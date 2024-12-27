@@ -1,4 +1,3 @@
-// components/CompletionScreen.jsx
 import React from 'react';
 
 const CompletionScreen = ({ onRestart,score }) => {
