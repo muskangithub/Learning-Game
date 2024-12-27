@@ -15,7 +15,6 @@ import clappingSound from "../assets/sound/clap.mp3";
 import sadSound from "../assets/sound/wrong.mp3";
 import DraggableAnimal from './DraggableAnimal'
 import HabitatDropZone from './HabitatDropZone'
-import {fetchGameData} from '../utils/fetchData'
 
 // Initial Animal data
 const initialAnimals = [
@@ -40,8 +39,6 @@ const GameNew = ({ onComplete,setScore,score }) => {
     nest: [],
     desert: [],
   });
-  const data=fetchGameData()
-  console.log(data,"dattatat")
   
   const [feedback, setFeedback] = useState('');
   const [isGameComplete, setIsGameComplete] = useState(false);
@@ -101,12 +98,12 @@ const GameNew = ({ onComplete,setScore,score }) => {
     <DndProvider backend={HTML5Backend}>
       <div className="p-6 space-y-6">
         <h1 className="text-2xl font-bold text-center">Match Animals to Habitats</h1>
-        <div className="flex space-x-4">
+        <div className="flex gap-4 flex-wrap ">
           {availableAnimals.map((animal) => (
             <DraggableAnimal key={animal.id} animal={animal} />
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 max-sm:grid-cols-1 max-md:grid-cols-2 gap-4">
           {Object.keys(habitatZones).map((habitat) => (
             <HabitatDropZone
               key={habitat}
