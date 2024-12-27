@@ -1,77 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import Lion from '../assets/images/Lion.jpg';
-import Panda from '../assets/images/panda.jpg';
-import Parrot from '../assets/images/parrot.jpeg';
-import Fish from '../assets/images/fish.jpg';
-import Camel from '../assets/images/camel.jpeg';
+import DraggableAnimal from './DraggableAnimal';
+import HabitatDropZone from './HabitatDropZone';
+import clappingSound from "../assets/sound/clap.mp3"; 
+import sadSound from "../assets/sound/wrong.mp3";
 
-// Initial Animal data
-const initialAnimals = [
-  { id: '3', name: 'panda', habitat: 'bamboo', image: Panda },
-  { id: '5', name: 'lion', habitat: 'jungle', image: Lion },
-  { id: '4', name: 'parrot', habitat: 'nest', image: Parrot },
-  { id: '2', name: 'fish', habitat: 'ocean', image: Fish },
-  { id: '1', name: 'camel', habitat: 'desert', image: Camel },
-];
-
-// Component for draggable animals
-const DraggableAnimal = ({ animal }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'animal',
-    item: { id: animal.id },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }));
-
-  return (
-    <div
-      ref={drag}
-      className={`p-4 rounded border ${isDragging ? 'opacity-50' : ''}`}
-    >
-      <img src={animal.image} alt={animal.name} className="w-16 h-16" />
-      <p className="text-center mt-2">{animal.name}</p>
-    </div>
-  );
-};
-
-// Component for habitat drop zones
-const HabitatDropZone = ({ habitat, animalsInZone, onDrop }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'animal',
-    drop: (item) => onDrop(item, habitat),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
-    }),
-  }));
-
-  return (
-    <div
-      ref={drop}
-      className={`p-6 border-2 rounded min-h-[150px] ${isOver ? 'bg-green-200' : 'bg-gray-100'}`}
-    >
-      <p className="text-center font-bold mb-2">{habitat}</p>
-      <div className="flex flex-wrap gap-2">
-        {animalsInZone.map(({ animal, isCorrect }) => (
-          <div
-            key={animal.id}
-            className={`w-16 h-16 border-2 ${
-              isCorrect ? 'border-green-500' : 'border-red-500'
-            }`}
-          >
-            <img src={animal.image} alt={animal.name} className="w-full h-full object-cover" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Main Component
-const GameNew = () => {
-  const [availableAnimals, setAvailableAnimals] = useState(initialAnimals);
+// Game Component
+const GameNew = ({ onComplete, setScore, score }) => {
+  const [availableAnimals, setAvailableAnimals] = useState([]);
   const [habitatZones, setHabitatZones] = useState({
     bamboo: [],
     ocean: [],
@@ -79,11 +16,45 @@ const GameNew = () => {
     nest: [],
     desert: [],
   });
-  const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [isGameComplete, setIsGameComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Handle animal drop
+  const clappingAudio = new Audio(clappingSound);
+  const sadAudio = new Audio(sadSound);
+
+  // Fetch animal data from API
+  useEffect(() => {
+    const fetchAnimals = async () => {
+      try {
+        const response = await fetch('https://www.freetestapi.com/api/v1/animals');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // Map fetched data to fit the structure used in your app
+        const mappedAnimals = data.map((animal) => ({
+          id: animal.id.toString(),
+          name: animal.name.toLowerCase(),
+          habitat: animal.habitat.toLowerCase(),
+          image: animal.image, // Ensure the API provides a valid image URL
+        }));
+
+        setAvailableAnimals(mappedAnimals);
+         setIsLoading(false);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnimals();
+  }, []);
+
+  // Handle drop logic
   const handleDrop = (item, habitat) => {
     const animal = availableAnimals.find((a) => a.id === item.id);
     if (!animal) return;
@@ -99,29 +70,26 @@ const GameNew = () => {
     if (isCorrect) {
       setScore((prev) => prev + 1);
       setFeedback(`🎉 Cheers! ${animal.name} lives in the ${habitat}!`);
+      clappingAudio.play();
     } else {
       setFeedback(`😞 Don't give up! ${animal.name} doesn't live in the ${habitat}. Try again!`);
+      sadAudio.play();
     }
 
     // Automatically clear feedback after 3 seconds
-    setTimeout(() => setFeedback(''), 3000);
+    setTimeout(() => setFeedback(''), 2000);
   };
 
-  // Check if game is complete using useEffect
+  // Check game completion
   useEffect(() => {
-    console.log('Remaining animals:', availableAnimals.length); // Log remaining animals
-
-    if (availableAnimals.length === 0) {
-      console.log('Last animal dropped, setting game complete...');
-      setTimeout(() => {
-        setIsGameComplete(true);
-      }, 500); // Small delay for the last drop animation
+    if (availableAnimals.length === 0 && !isLoading) {
+      setTimeout(() => setIsGameComplete(true), 500);
     }
-  }, [availableAnimals]); // Re-run whenever availableAnimals change
+  }, [availableAnimals, isLoading]);
 
   // Restart the game
   const handleRestart = () => {
-    setAvailableAnimals(initialAnimals);
+    setAvailableAnimals([]);
     setHabitatZones({
       bamboo: [],
       ocean: [],
@@ -129,10 +97,18 @@ const GameNew = () => {
       nest: [],
       desert: [],
     });
-    setScore(0);
     setFeedback('');
-    setIsGameComplete(false); // Reset game completion state
+    setIsGameComplete(false);
+    onComplete(); // Reset game completion state
   };
+
+  if (isLoading) {
+    return <p>Loading animals...</p>;
+  }
+
+  if (error) {
+    return <p>Error: {error}</p>;
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -158,7 +134,7 @@ const GameNew = () => {
           {feedback && (
             <p
               className={`mt-4 p-2 rounded text-lg ${
-                feedback.includes('🎉') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                feedback.includes('🎉') ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'
               }`}
             >
               {feedback}
@@ -166,7 +142,6 @@ const GameNew = () => {
           )}
         </div>
 
-        {/* Show celebratory modal when game is complete */}
         {isGameComplete && (
           <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex flex-col items-center justify-center text-white">
             <h2 className="text-4xl font-bold mb-4">🎉 Congratulations! 🎉</h2>

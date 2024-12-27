@@ -4,7 +4,7 @@ export const fetchGameData = async () => {
     "https://jsonplaceholder.typicode.com/photos?_limit=6"
   );
   const data = await response.json();
-  return data.map((item) => ({
+  return await data.map((item) => ({
     id: item.id,
     title: item.title,
     url: item.url,
